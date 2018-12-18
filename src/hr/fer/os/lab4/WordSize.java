@@ -17,5 +17,13 @@ public enum WordSize {
 	public int getSizeInBits() {
 		return sizeInBytes*2;
 	}
+	
+	public static WordSize forSize(int size) {
+		if(size==1) return WordSize.byte_1;
+		if(size==2) return WordSize.byte_2;
+		if(size==4) return WordSize.byte_4;
+		if(size==8) return WordSize.byte_8;
+		return null;
+	}
 
 }
