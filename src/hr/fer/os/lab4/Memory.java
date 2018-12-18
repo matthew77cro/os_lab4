@@ -28,16 +28,13 @@ public class Memory {
 	}
 	
 	private void init() {
-		for(int i=0; i<this.memSize; i++) {
-			for(int j=0; j<this.wordSize.getSizeInBytes(); j++) {
-				memory[i][j] = '-';
-			}
-		}
+		forFiller(0,this.memSize-1, '-');
 	}
 	
 	public long malloc(MemRequest memReq) {
 		if(memReq.segmentSizeInNumOfWords<=0) return -1;
 		
+		//Assigning an unique ID to a memRequest and adding it to pending memRequests
 		while(true) {
 			long rand = (long)(Math.random()*memSizeToSmallestLargerTen);
 			if(!idSet.add(rand)) continue;
@@ -46,7 +43,7 @@ public class Memory {
 		}
 		pending.add(memReq);
 		
-		activateFirstFromPending();
+		while(activateFirstFromPending()==true);
 		
 		return memReq.segmentID;
 		
@@ -55,44 +52,43 @@ public class Memory {
 	public void free(long segmentID) {
 		if(!idSet.contains(segmentID)) throw new NoSuchSegmentException(segmentID);
 		
+		MemRequest segmentToFree = null;
+		boolean wasInPending = false;
 		for(MemRequest m : pending)
 			if(m.segmentID==segmentID) {
-				idSet.remove(segmentID);
-				pending.remove(m);
-				activateFirstFromPending();
-				return;
-		}
-		
-		MemRequest segmentToFree = null;
-		for(MemRequest m : inMemory)
-			if(m.segmentID==segmentID) {
 				segmentToFree = m;
+				pending.remove(segmentToFree);
+				wasInPending = true;
 				break;
 		}
 		
-		for(int i=segmentToFree.segmentAdress; i<=segmentToFree.segmentAdress+segmentToFree.segmentSizeInNumOfWords-1; i++) {
-			for(int j=0; j<this.wordSize.getSizeInBytes(); j++) {
-				memory[i][j] = '-';
+		if(!wasInPending) {
+			for(MemRequest m : inMemory)
+				if(m.segmentID==segmentID) {
+					segmentToFree = m;
+					inMemory.remove(segmentToFree);
+					break;
 			}
+			forFiller(segmentToFree.segmentAdress, segmentToFree.segmentAdress+segmentToFree.segmentSizeInNumOfWords-1, '-');
 		}
 		
 		//free it from memory array and idSet and inMemory
 		idSet.remove(segmentID);
-		inMemory.remove(segmentToFree);
-		
-		activateFirstFromPending();
+
+		while(activateFirstFromPending()==true);
 		
 	}
 	
-	private void activateFirstFromPending() {
+	private boolean activateFirstFromPending() {
 		
-		if(pending.isEmpty()) return;
+		if(pending.isEmpty()) return false;
 
 		int numOfHoles = 0;
 		int smallestHoleThatCanFitStart = -1;
 		int smallestHoleThatCanFitSize = this.memSize+1;
 		boolean foundHole = false;
 		
+		//Find the first smallest hole to fit the request in
 		int pomSize = 0, pomStart = 0;
 		boolean countingTheHole = false;
 		for(int i=0; i<this.memSize; i++) {
@@ -117,32 +113,25 @@ public class Memory {
 			}
 		}	
 		
+		//If hole was found, allocate the memory, if not check if garbage collection would help and if so, do it and allocate the memory
+		MemRequest m = null;
 		if(foundHole) {
-			MemRequest m = this.pending.poll();
-			m.isInMemory = true;
+			m = this.pending.poll();
 			m.segmentAdress = smallestHoleThatCanFitStart;
-			this.inMemory.add(m);
-			for(int i=m.segmentAdress; i<=m.segmentAdress+m.segmentSizeInNumOfWords-1; i++) {
-				for(int j=0; j<this.wordSize.getSizeInBytes(); j++) {
-					memory[i][j] = m.segmentChar;
-				}
-			}
 		}else {
-			if(numOfHoles<this.pending.peek().segmentSizeInNumOfWords) return;
-			MemRequest m = this.pending.poll();
-			m.isInMemory = true;
+			if(numOfHoles<this.pending.peek().segmentSizeInNumOfWords) return false;
+			m = this.pending.poll();
 			m.segmentAdress = defrag();
-			this.inMemory.add(m);
-			for(int i=m.segmentAdress; i<=m.segmentAdress+m.segmentSizeInNumOfWords-1; i++) {
-				for(int j=0; j<this.wordSize.getSizeInBytes(); j++) {
-					memory[i][j] = m.segmentChar;
-				}
-			}
 		}
+		m.isInMemory = true;
+		this.inMemory.add(m);
+		forFiller(m.segmentAdress, m.segmentAdress+m.segmentSizeInNumOfWords-1, m.segmentChar);
+		return true;
 		
 	}
 	
 	private int defrag() {
+		//Push all segments towards smaller memory addresses so that all spaces bubble upwards
 		for(MemRequest m : inMemory) {
 			if(m.segmentAdress==0) continue;
 			int destAdress = -1;
@@ -151,19 +140,25 @@ public class Memory {
 				else break;
 			}
 			if(destAdress==-1) continue;
-			for(int i=m.segmentAdress; i<=m.segmentAdress+m.segmentSizeInNumOfWords-1; i++) {
-				for(int j=0; j<this.wordSize.getSizeInBytes(); j++)
-					memory[i][j] = '-';
-			}
+			forFiller(m.segmentAdress, m.segmentAdress+m.segmentSizeInNumOfWords-1, '-');
 			m.segmentAdress = destAdress;
-			for(int i=m.segmentAdress; i<=m.segmentAdress+m.segmentSizeInNumOfWords-1; i++) {
-				for(int j=0; j<this.wordSize.getSizeInBytes(); j++)
-					memory[i][j] = m.segmentChar;
-			}
+			forFiller(m.segmentAdress, m.segmentAdress+m.segmentSizeInNumOfWords-1, m.segmentChar);
 		}
+		
+		//Find the start address of blank space in memory 
 		for(int i=0; i<this.memSize; i++)
 			if(memory[i][0]=='-') return i;
+		
+		//If defrag did not succeed, return -1
 		return -1;
+	}
+	
+	private void forFiller(int start, int condition, char fill) {
+		for(int i=start; i<=condition; i++) {
+			for(int j=0; j<this.wordSize.getSizeInBytes(); j++) {
+				memory[i][j] = fill;
+			}
+		}
 	}
 	
 	@Override
@@ -171,12 +166,12 @@ public class Memory {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Pending: ");
 		for(MemRequest mrq : pending) {
-			sb.append(mrq.segmentChar + "(" + mrq.segmentSizeInNumOfWords + "," + mrq.segmentID + ")");
+			sb.append(mrq.segmentID + "(" + mrq.segmentSizeInNumOfWords + "," + mrq.segmentChar + ")");
 			sb.append(" ");
 		}
-		sb.append("InMemory: ");
+		sb.append("%nInMemory: ");
 		for(MemRequest mrq : inMemory) {
-			sb.append(mrq.segmentID + "(" + mrq.segmentChar + "," + mrq.segmentSizeInNumOfWords + ")");
+			sb.append(mrq.segmentID + "(" + mrq.segmentSizeInNumOfWords + "," + mrq.segmentChar + ")");
 			sb.append(" ");
 		}
 		sb.append("%n");
@@ -184,6 +179,7 @@ public class Memory {
 			sb.append(memory[i]);
 			sb.append("%n");
 		}
+		sb.append("%n");
 		return sb.toString();
 	}
 	
@@ -238,6 +234,5 @@ public class Memory {
 		}
 
 	}
-
 
 }

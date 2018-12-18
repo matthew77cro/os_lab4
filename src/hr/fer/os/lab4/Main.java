@@ -5,37 +5,9 @@ import java.util.Scanner;
 public class Main {
 	
 	public static void main(String[] args) {
-		//Testing
-		/*Memory memory = new Memory(WordSize.byte_4, 10);
-		System.out.printf(memory.toString());
-		memory.malloc(new Memory.MemRequest(4, 'A'));
-		System.out.printf(memory.toString());
-		long indexb = memory.malloc(new Memory.MemRequest(4, 'B'));
-		System.out.printf(memory.toString());
-		long indexc =memory.malloc(new Memory.MemRequest(2, 'C'));
-		System.out.printf(memory.toString());
-		long indexd =memory.malloc(new Memory.MemRequest(2, 'D'));
-		System.out.printf(memory.toString());
-		memory.free(indexb);
-		System.out.printf(memory.toString());
-		memory.malloc(new Memory.MemRequest(2, 'E'));
-		System.out.printf(memory.toString());
-		memory.free(indexc);
-		System.out.printf(memory.toString());
-		memory.free(indexd);
-		System.out.printf(memory.toString());
-		memory.malloc(new Memory.MemRequest(4, 'F'));
-		System.out.printf(memory.toString());*/
 		
-		//Testing 2
-		/*Memory memory = new Memory(WordSize.byte_1, 2);
-		System.out.printf(memory.toString());
-		long indexa = memory.malloc(new Memory.MemRequest(5, 'A'));
-		System.out.printf(memory.toString());
-		long indexb = memory.malloc(new Memory.MemRequest(2, 'B'));
-		System.out.printf(memory.toString());
-		memory.free(indexa);
-		System.out.printf(memory.toString());*/
+		//Test method
+		//testMemory();
 		
 		Scanner sc = new Scanner(System.in);
 		
@@ -43,6 +15,8 @@ public class Main {
 		System.out.printf(m.toString());
 		
 		System.out.println("Command input:");
+		System.out.println("1 malloc(#of_words, char)");
+		System.out.println("2 free(segmentID)");
 		
 		while(sc.hasNext()) {
 			commandRecognize(m, sc.nextLine());
@@ -140,6 +114,37 @@ public class Main {
 		
 		
 		System.out.printf(m.toString());
+	}
+	
+	public static void testMemory() {
+		Memory memory = new Memory(WordSize.byte_4, 10);
+		System.out.printf(memory.toString());
+		memory.malloc(new Memory.MemRequest(4, 'A'));
+		System.out.printf(memory.toString());
+		long indexb = memory.malloc(new Memory.MemRequest(4, 'B'));
+		System.out.printf(memory.toString());
+		long indexc =memory.malloc(new Memory.MemRequest(2, 'C'));
+		System.out.printf(memory.toString());
+		long indexd =memory.malloc(new Memory.MemRequest(2, 'D'));
+		System.out.printf(memory.toString());
+		memory.free(indexb);
+		System.out.printf(memory.toString());
+		memory.malloc(new Memory.MemRequest(2, 'E'));
+		System.out.printf(memory.toString());
+		memory.free(indexc);
+		System.out.printf(memory.toString());
+		memory.free(indexd);
+		System.out.printf(memory.toString());
+		long indexf = memory.malloc(new Memory.MemRequest(4, 'F'));
+		System.out.printf(memory.toString());
+		memory.free(indexf);
+		System.out.printf(memory.toString());
+		long indexg = memory.malloc(new Memory.MemRequest(15, 'G'));
+		System.out.printf(memory.toString());
+		memory.malloc(new Memory.MemRequest(2, 'H'));
+		System.out.printf(memory.toString());
+		memory.free(indexg);
+		System.out.printf(memory.toString());
 	}
 
 }
