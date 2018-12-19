@@ -63,12 +63,15 @@ public class Main {
 		char[] command = s.toCharArray();
 		
 		if(s.startsWith("malloc")) {
-			StringBuilder sb = new StringBuilder();
 			int i=7;
 			
+			//load malloc size
+			StringBuilder sb = new StringBuilder();
 			while(true) {
 				if(Character.isDigit(command[i])) {
 					sb.append(command[i]);
+					i++;
+				}else if(command[i]==' '){
 					i++;
 				}else {
 					i++;
@@ -77,16 +80,15 @@ public class Main {
 			}
 			int size = Integer.parseInt(sb.toString());
 			
-			StringBuilder sb2 = new StringBuilder();
+			//load malloc char
 			while(true) {
-				if(command[i]!=')') {
-					sb2.append(command[i]);
+				if(command[i]==' ') {
 					i++;
 				}else {
 					break;
 				}
 			}
-			char c = sb2.toString().trim().toCharArray()[0];
+			char c = command[i];
 			
 			long index = m.malloc(new Memory.MemRequest(size, c));
 			System.out.printf("Memory at: " + index + "%n");
